@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+memory.db
+.DS_Store
+*.db
+test_local.py
+test_requirements.py
