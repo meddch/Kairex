@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Kairex Memory API", lifespan=lifespan)
+app = FastAPI(title="Organizational Memory API", lifespan=lifespan)
 
 
 # ── Request models ────────────────────────────────────────────────────────────

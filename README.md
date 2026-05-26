@@ -1,6 +1,6 @@
-# Kairex Memory API
+# Organizational Memory API
 
-Organizational memory pipeline for the Kairex AI Enterprise Agent. Extracts structured facts from conversation transcripts, routes them through a human approval gate, and injects approved context into downstream LLM prompts — in French.
+Organizational memory pipeline for extracting structured facts from conversation transcripts, routing them through a human approval gate, and injecting approved context into downstream LLM prompts — in French.
 
 ---
 
@@ -115,8 +115,8 @@ If `session_id` is omitted, a new session is created. If provided, the endpoint 
 ```
 
 ```bash
-curl -X POST https://kairex.up.railway.app/extract-session \
-  -H "X-API-Key: kairex-test-key" \
+curl -X POST https://memory-api.example.com/extract-session \
+  -H "X-API-Key: test-api-key" \
   -H "Content-Type: application/json" \
   -d '{
     "org_id": "acme",
@@ -144,8 +144,8 @@ Returns `404` if no approved facts exist for the org.
 ```
 
 ```bash
-curl "https://kairex.up.railway.app/inject-context?org_id=acme" \
-  -H "X-API-Key: kairex-test-key"
+curl "https://memory-api.example.com/inject-context?org_id=acme" \
+  -H "X-API-Key: test-api-key"
 ```
 
 ---
@@ -165,8 +165,8 @@ Lists facts awaiting a human decision.
 ```
 
 ```bash
-curl "https://kairex.up.railway.app/facts/pending?org_id=acme" \
-  -H "X-API-Key: kairex-test-key"
+curl "https://memory-api.example.com/facts/pending?org_id=acme" \
+  -H "X-API-Key: test-api-key"
 ```
 
 ---
@@ -176,8 +176,8 @@ curl "https://kairex.up.railway.app/facts/pending?org_id=acme" \
 Promotes a fact from `pending` to `approved`. Approved facts are included in `/inject-context`.
 
 ```bash
-curl -X POST "https://kairex.up.railway.app/facts/FACT-UUID/approve" \
-  -H "X-API-Key: kairex-test-key"
+curl -X POST "https://memory-api.example.com/facts/FACT-UUID/approve" \
+  -H "X-API-Key: test-api-key"
 ```
 
 **Response:**
@@ -195,8 +195,8 @@ curl -X POST "https://kairex.up.railway.app/facts/FACT-UUID/approve" \
 Sets a fact to `rejected`. Rejected facts are permanently excluded from context injection.
 
 ```bash
-curl -X POST "https://kairex.up.railway.app/facts/FACT-UUID/reject" \
-  -H "X-API-Key: kairex-test-key"
+curl -X POST "https://memory-api.example.com/facts/FACT-UUID/reject" \
+  -H "X-API-Key: test-api-key"
 ```
 
 ---
@@ -206,7 +206,7 @@ curl -X POST "https://kairex.up.railway.app/facts/FACT-UUID/reject" \
 Unauthenticated liveness check.
 
 ```bash
-curl https://kairex.up.railway.app/health
+curl https://memory-api.example.com/health
 # {"status": "ok"}
 ```
 
@@ -217,8 +217,8 @@ curl https://kairex.up.railway.app/health
 **Step 1 — Extract from a transcript**
 
 ```bash
-curl -X POST https://kairex.up.railway.app/extract-session \
-  -H "X-API-Key: kairex-test-key" \
+curl -X POST https://memory-api.example.com/extract-session \
+  -H "X-API-Key: test-api-key" \
   -H "Content-Type: application/json" \
   -d '{"org_id": "acme", "transcript": "Sara is our CTO. We use Salesforce. 45 employees."}'
 ```
@@ -228,25 +228,25 @@ Returns `session_id` and 3–6 pending facts. Save the `session_id`.
 **Step 2 — Review pending facts**
 
 ```bash
-curl "https://kairex.up.railway.app/facts/pending?org_id=acme" \
-  -H "X-API-Key: kairex-test-key"
+curl "https://memory-api.example.com/facts/pending?org_id=acme" \
+  -H "X-API-Key: test-api-key"
 ```
 
 **Step 3 — Approve and reject**
 
 ```bash
-curl -X POST https://kairex.up.railway.app/facts/FACT-ID-1/approve \
-  -H "X-API-Key: kairex-test-key"
+curl -X POST https://memory-api.example.com/facts/FACT-ID-1/approve \
+  -H "X-API-Key: test-api-key"
 
-curl -X POST https://kairex.up.railway.app/facts/FACT-ID-2/reject \
-  -H "X-API-Key: kairex-test-key"
+curl -X POST https://memory-api.example.com/facts/FACT-ID-2/reject \
+  -H "X-API-Key: test-api-key"
 ```
 
 **Step 4 — Inject approved context**
 
 ```bash
-curl "https://kairex.up.railway.app/inject-context?org_id=acme" \
-  -H "X-API-Key: kairex-test-key"
+curl "https://memory-api.example.com/inject-context?org_id=acme" \
+  -H "X-API-Key: test-api-key"
 ```
 
 Returns a French context block containing only approved facts.
@@ -256,8 +256,8 @@ Returns a French context block containing only approved facts.
 If the extraction was interrupted (server restart, timeout, network drop), re-submit with the original `session_id`:
 
 ```bash
-curl -X POST https://kairex.up.railway.app/extract-session \
-  -H "X-API-Key: kairex-test-key" \
+curl -X POST https://memory-api.example.com/extract-session \
+  -H "X-API-Key: test-api-key" \
   -H "Content-Type: application/json" \
   -d '{"org_id": "acme", "transcript": "...", "session_id": "ORIGINAL-SESSION-ID"}'
 ```
@@ -268,26 +268,10 @@ Already-checkpointed facts are restored from the DB, not re-extracted. No duplic
 
 ## What Was Cut and Why
 
-**Rate limiting** — would add value in a multi-tenant production deployment. Not needed for a single-org evaluation context. Can be added as FastAPI middleware in one file.
+**Rate limiting** — would add value in a multi-tenant production deployment. Not needed for a single-tenant deployment. Can be added as FastAPI middleware in one file.
 
 **Semantic deduplication** — detecting that "Sara is CTO" and "The CTO is Sara" are the same fact requires embedding comparison. Omitted because the human approval gate already catches this: a reviewer rejects the duplicate. Adding vector similarity before the gate is the right next step, not a prerequisite.
 
 **Async task queue** — extraction is synchronous and blocks the request. For long transcripts or high concurrency, this should be a background job (Celery, ARQ, or Railway's job service) with a status-polling endpoint. Excluded to keep the deployment surface minimal for this scope.
 
-**Memory validation UI** — the approve/reject endpoints are the interface. A thin frontend over `GET /facts/pending` and the two mutation endpoints is a natural next layer. Not built here because the API contract is the deliverable.
-
----
-
-## AI Usage
-
-Claude Code was used throughout this build as a technical collaborator, not an autocomplete tool.
-
-Specific contributions worth noting:
-
-- **Architecture enforcement**: caught that `ExtractorAgent` was importing from `database.py` and calling `conn.commit()` directly on a connection owned by `main.py`'s context manager — a subtle coupling violation that would have broken the agent isolation requirement.
-
-- **Checkpoint ordering bug**: identified that the original code wrote the fact before the checkpoint. A crash between the two would generate a new UUID on re-run and insert a duplicate. Fixed by inverting the write order (checkpoint first) and adding fact re-insertion on the resume path.
-
-- **Requirements verification**: wrote `test_requirements.py` — 28 automated checks covering all three requirements, including a simulated crash scenario (deleting 3 fact rows while preserving their checkpoints, then verifying resumption restores the correct rows with the original UUIDs).
-
-All architectural decisions — SQLite over Postgres, plain SDK over LangChain, synchronous over async — were made and defended in conversation before implementation.
+**Memory validation UI** — the approve/reject endpoints are the interface. A thin frontend over `GET /facts/pending` and the two mutation endpoints is a natural next layer. Not built here because the API contract is the focus.
